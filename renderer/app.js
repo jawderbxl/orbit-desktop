@@ -43,6 +43,7 @@ const P = {
   today: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="16" r="2"/>',
   copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
   move: '<polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>',
+  wallet: '<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>',
   bookmark: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
   user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   wifi: '<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>',
@@ -51,9 +52,10 @@ const P = {
   refresh: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
 };
 const ic = (n, s = 18, w = 2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
-const KIND_IC = { board: 'board', timetable: 'calendar', commissions: 'cash', payments: 'card', expenses: 'spend', chart: 'barchart' };
+const KIND_IC = { board: 'board', timetable: 'calendar', commissions: 'cash', payments: 'card', expenses: 'spend', budget: 'wallet', chart: 'barchart' };
 const MONEY_KINDS = ['commissions', 'payments', 'expenses'];
 const isMoneyKind = (k) => MONEY_KINDS.includes(k);
+const isBudgetKind = (k) => k === 'budget';
 const moneySign = (k) => (k === 'commissions' ? 1 : -1);
 
 const L = {
@@ -101,6 +103,11 @@ const L = {
     'overview.empty': 'Nothing planned. Enjoy.', 'overview.in': 'in {v}', 'overview.now': 'now', 'overview.earned': 'To receive', 'overview.owed': 'To pay',
     'p.duplicate': 'Duplicate', 'p.copy': '{title} (copy)', 'p.move': 'Move to…', 'p.moved': 'Moved to {tab}', 'p.noTarget': 'No other tab of this type',
     'tpl.save': 'Save as template', 'tpl.saved': 'Template saved', 'tpl.use': 'Templates',
+    'kind.budget': 'Budgets', 'kd.budget': 'A budget per item, and what is left',
+    'p.budget': 'Budget', 'p.spentSoFar': 'Spent so far', 'p.remaining': 'Left', 'p.over': 'Over by {v}',
+    'budget.total': '{v} budget', 'budget.spent': '{v} spent', 'budget.left': '{v} left',
+    'metric.budget.remaining': 'Left per budget', 'metric.budget.split': 'Spent vs left',
+    'chart.range': 'Period', 'range.12m': '12 months', 'range.6m': '6 months', 'range.30d': '30 days', 'range.7d': '7 days',
     'days.short': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 'days.long': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
   },
   fr: {
@@ -147,6 +154,11 @@ const L = {
     'overview.empty': 'Rien de prévu. Profite.', 'overview.in': 'dans {v}', 'overview.now': 'maintenant', 'overview.earned': 'À recevoir', 'overview.owed': 'À payer',
     'p.duplicate': 'Dupliquer', 'p.copy': '{title} (copie)', 'p.move': 'Déplacer vers…', 'p.moved': 'Déplacé vers {tab}', 'p.noTarget': 'Aucun autre onglet de ce type',
     'tpl.save': 'Enregistrer comme modèle', 'tpl.saved': 'Modèle enregistré', 'tpl.use': 'Modèles',
+    'kind.budget': 'Budgets', 'kd.budget': "Un budget par poste, et ce qu'il en reste",
+    'p.budget': 'Budget', 'p.spentSoFar': 'Déjà dépensé', 'p.remaining': 'Restant', 'p.over': 'Dépassé de {v}',
+    'budget.total': '{v} de budget', 'budget.spent': '{v} dépensé', 'budget.left': '{v} restant',
+    'metric.budget.remaining': 'Restant par budget', 'metric.budget.split': 'Dépensé et restant',
+    'chart.range': 'Période', 'range.12m': '12 mois', 'range.6m': '6 mois', 'range.30d': '30 jours', 'range.7d': '7 jours',
     'days.short': ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'], 'days.long': ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'],
   },
 };
@@ -205,7 +217,7 @@ function logoSVG(size, sat = '#22D3EE', { intro = false, period = 8 } = {}) {
 }
 
 /* ---------- Data ---------- */
-const PAGE_DEFAULTS = { description: '', done: false, images: [], tags: [], checklist: [], deadline: null, client: '', price: null, paid: false, day: 0, start: 540, end: 600, color: null, chartType: 'bar', source: 'manual', sourceTabId: null, metric: 'money.status', points: [] };
+const PAGE_DEFAULTS = { description: '', done: false, images: [], tags: [], checklist: [], deadline: null, client: '', price: null, paid: false, day: 0, start: 540, end: 600, color: null, chartType: 'bar', source: 'manual', sourceTabId: null, metric: 'money.status', points: [], range: '6m', spent: 0 };
 function defaultData() {
   const tabs = [
     { id: uid(), name: 'Timetable', color: ACC[0], kind: 'timetable', startHour: 7, endHour: 22 },
@@ -345,6 +357,13 @@ function renderMain() {
   if (tt) {
     h += `<div class="hrow"><div class="seg">${segBtn(T('v.week'), S.view === 'week', C, 'view', 'week', 'grid')}${segBtn(T('v.day'), S.view === 'day', C, 'view', 'day', 'calendar')}</div>
       ${S.view === 'day' ? `<div class="daypick">${T('days.short').map((d, i) => `<button data-a="day" data-v="${i}" style="${i === S.day ? `background:${C};border-color:${C};color:var(--on);box-shadow:0 0 12px ${C}88` : ''}">${d}</button>`).join('')}</div>` : ''}</div>`;
+  } else if (isBudgetKind(tab.kind)) {
+    const b = budgetTotals(pages);
+    h += `<div class="hrow"><div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${chip(T('budget.total', { v: money(b.budget) }), C, 'wallet')}
+      ${chip(T('budget.spent', { v: money(b.spent) }), '#8A8AA6', 'spend')}
+      ${chip(T('budget.left', { v: money(b.left) }), b.left < 0 ? '#FF4D6D' : '#34D399', 'check')}
+    </div><div class="grow"></div></div>`;
   } else if (chart) {
     h += '';
   } else {
@@ -413,6 +432,10 @@ function renderBody() {
 }
 
 function cardHTML(p, tab, i, drag) {
+  const bud = isBudgetKind(tab.kind);
+  const bTotal = p.price || 0, bSpent = p.spent || 0, bLeft = bTotal - bSpent;
+  const bRatio = bTotal > 0 ? Math.min(1, bSpent / bTotal) : 0;
+  const bColor = bLeft < 0 ? 'var(--dg)' : bRatio > 0.8 ? 'var(--wa)' : tab.color;
   const C = tab.color, com = isMoneyKind(tab.kind), pay = tab.kind === 'payments', spend = tab.kind === 'expenses', d = due(p), cd = p.checklist.filter((c) => c.done).length;
   let meta = '';
   if (com && p.price != null) meta += chip(p.paid ? T(spend ? 'p.spent' : pay ? 'p.repaid' : 'p.paid') : T(spend ? 'p.toSpend' : pay ? 'p.toPay' : 'p.unpaid'), p.paid ? '#8A8AA6' : '#FBBF24', p.paid ? 'check' : 'clock');
@@ -424,8 +447,10 @@ function cardHTML(p, tab, i, drag) {
   return `<div class="card ${p.done ? 'done' : ''} ${S.detailId === p.id ? 'sel' : ''}" data-a="open" data-id="${p.id}" ${drag ? `draggable="true" data-drag-page="${p.id}"` : ''} style="--c:${C};animation-delay:${Math.min(i, 14) * 28}ms">
     ${p.images[0] ? `<img class="cover" src="${imgSrc(p.images[0])}" alt="" draggable="false">` : ''}
     <div class="cin">
-      <div class="trow">${checkBtn(p.done, C, 'toggle', p.id)}<span class="ctitle ${p.done ? 'strike' : ''}">${esc(p.title)}</span>${com && p.price != null ? `<b style="font-size:15px;color:${p.paid ? 'var(--mu)' : C}">${money(p.price)}</b>` : ''}</div>
+      <div class="trow">${checkBtn(p.done, C, 'toggle', p.id)}<span class="ctitle ${p.done ? 'strike' : ''}">${esc(p.title)}</span>${(com || bud) && p.price != null ? `<b style="font-size:15px;color:${p.paid ? 'var(--mu)' : C}">${money(p.price)}</b>` : ''}</div>
       ${com && p.client ? `<div class="sub">${esc(p.client)}</div>` : ''}
+      ${bud && bTotal > 0 ? `<div class="track" style="margin:10px 0 0 34px"><div class="fill" style="width:${bRatio * 100}%;background:${bColor};box-shadow:0 0 10px ${bColor}"></div></div>
+        <div style="display:flex;justify-content:space-between;margin:6px 0 0 34px;font-size:12.5px"><span style="color:var(--mu)">${T('budget.spent', { v: money(bSpent) })}</span><b style="color:${bColor}">${bLeft < 0 ? T('p.over', { v: money(-bLeft) }) : T('budget.left', { v: money(bLeft) })}</b></div>` : ''}
       ${p.description ? `<div class="desc">${esc(p.description)}</div>` : ''}
       ${meta ? `<div class="meta">${meta}</div>` : ''}
     </div>
@@ -434,6 +459,32 @@ function cardHTML(p, tab, i, drag) {
 
 const METRICS = ['money.status', 'money.month', 'money.client', 'pages.status', 'pages.tag'];
 const FLOW_METRICS = ['flow.inout', 'flow.month', 'flow.tab'];
+const BUDGET_METRICS = ['budget.remaining', 'budget.split'];
+const RANGES = ['12m', '6m', '30d', '7d'];
+const isRanged = (m) => m === 'money.month' || m === 'flow.month';
+function buckets(range) {
+  const out = [], n = new Date();
+  if (range === '30d' || range === '7d') {
+    const days = range === '7d' ? 7 : 30;
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(n.getFullYear(), n.getMonth(), n.getDate() - i);
+      out.push({ key: `d${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`, label: d.toLocaleDateString(loc(), days === 7 ? { weekday: 'short' } : { day: 'numeric' }) });
+    }
+    return out;
+  }
+  const months = range === '12m' ? 12 : 6;
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(n.getFullYear(), n.getMonth() - i, 1);
+    out.push({ key: `m${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString(loc(), { month: 'short' }) });
+  }
+  return out;
+}
+const bucketKey = (ts, range) => { const d = new Date(ts); return range === '30d' || range === '7d' ? `d${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` : `m${d.getFullYear()}-${d.getMonth()}`; };
+function budgetTotals(list) {
+  const budget = list.reduce((n, p) => n + (p.price || 0), 0);
+  const spent = list.reduce((n, p) => n + (p.spent || 0), 0);
+  return { budget, spent, left: budget - spent };
+}
 const shade = (i) => ACC[i % ACC.length];
 const topN = (map, n = 6) => Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, n);
 function moneyTotals() {
@@ -454,14 +505,11 @@ function buildSeries(page, accent) {
       .flatMap((t) => (S.data.pages[t.id] || []).filter((p) => p.price != null).map((p) => ({ ...p, tab: t, sign: moneySign(t.kind) })));
     const mkey = (p) => { const d = new Date(p.deadline ?? p.createdAt ?? 0); return `${d.getFullYear()}-${d.getMonth()}`; };
     if (page.metric === 'flow.month') {
-      const out = [], n = new Date();
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(n.getFullYear(), n.getMonth() - i, 1);
-        const key = `${d.getFullYear()}-${d.getMonth()}`;
-        const sum = rows.reduce((acc, r) => (mkey(r) === key ? acc + r.sign * r.price : acc), 0);
-        out.push({ label: d.toLocaleDateString(loc(), { month: 'short' }), value: sum, color: sum < 0 ? '#FF4D6D' : accent });
-      }
-      return out;
+      const range = page.range || '6m';
+      return buckets(range).map(({ key, label }) => {
+        const sum = rows.reduce((acc, r) => (bucketKey(r.deadline ?? r.createdAt ?? 0, range) === key ? acc + r.sign * r.price : acc), 0);
+        return { label, value: sum, color: sum < 0 ? '#FF4D6D' : accent };
+      });
     }
     if (page.metric === 'flow.tab') {
       const map = {};
@@ -493,14 +541,18 @@ function buildSeries(page, accent) {
     }
     case 'money.month': {
       if (!money) return [];
-      const out = [], n = new Date();
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(n.getFullYear(), n.getMonth() - i, 1);
-        const key = `${d.getFullYear()}-${d.getMonth()}`;
-        const sum = list.reduce((acc, p) => { const w = new Date(p.deadline ?? p.createdAt ?? 0); return `${w.getFullYear()}-${w.getMonth()}` === key && p.price != null ? acc + p.price : acc; }, 0);
-        out.push({ label: d.toLocaleDateString(loc(), { month: 'short' }), value: sum, color: accent });
-      }
-      return out;
+      const range = page.range || '6m';
+      const sign = moneySign(tab.kind);
+      return buckets(range).map(({ key, label }) => {
+        const sum = list.reduce((acc, p) => (p.price != null && bucketKey(p.deadline ?? p.createdAt ?? 0, range) === key ? acc + sign * p.price : acc), 0);
+        return { label, value: sum, color: sum < 0 ? '#FF4D6D' : accent };
+      });
+    }
+    case 'budget.remaining':
+      return list.slice(0, 8).map((p, i) => ({ label: p.title, value: Math.max(0, (p.price || 0) - (p.spent || 0)), color: shade(i) }));
+    case 'budget.split': {
+      const b = budgetTotals(list);
+      return [{ label: T('p.spentSoFar'), value: b.spent, color: '#FF4D6D' }, { label: T('p.remaining'), value: Math.max(0, b.left), color: accent }];
     }
     case 'money.client': {
       if (!money) return [];
@@ -523,7 +575,11 @@ const niceN = (v) => (Math.abs(v) >= 1000 ? `${Math.round(v / 100) / 10}k` : Mat
 function chartSVG(type, pts, color, w, h, labels = true) {
   pts = (pts || []).filter((p) => p && isFinite(p.value));
   if (!pts.length) return `<div style="color:var(--mu);font-size:13px;padding:20px 0;text-align:center">${T('chart.noData')}</div>`;
-  const pad = labels ? 26 : 8, innerH = h - (labels ? 22 : 6) - 8, max = Math.max(...pts.map((p) => Math.abs(p.value)), 1);
+  const pad = labels ? 26 : 8, innerH = h - (labels ? 22 : 6) - 8;
+  const hi = Math.max(...pts.map((p) => p.value), 0), lo = Math.min(...pts.map((p) => p.value), 0);
+  const span = hi - lo || 1;
+  const yOf = (v) => 8 + ((hi - v) / span) * innerH;
+  const zero = yOf(0);
   if (type === 'donut') {
     const total = pts.reduce((n, p) => n + Math.abs(p.value), 0) || 1;
     const r = Math.min(w, h) / 2 - 16, cx = w / 2, cy = h / 2, circ = 2 * Math.PI * r;
@@ -539,11 +595,11 @@ function chartSVG(type, pts, color, w, h, labels = true) {
   const stepW = (w - pad) / pts.length;
   if (type === 'line') {
     const x = (i) => pad + stepW * i + stepW / 2;
-    const y = (v) => 8 + innerH - (Math.abs(v) / max) * innerH;
+    const y = (v) => yOf(v);
     const d = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i)},${y(p.value)}`).join(' ');
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-      <line x1="${pad}" y1="${8 + innerH}" x2="${w}" y2="${8 + innerH}" stroke="var(--bd)"/>
-      <path d="${d} L${x(pts.length - 1)},${8 + innerH} L${x(0)},${8 + innerH} Z" fill="${color}" fill-opacity=".14"/>
+      <line x1="${pad}" y1="${zero}" x2="${w}" y2="${zero}" stroke="var(--bd)"/>
+      <path d="${d} L${x(pts.length - 1)},${zero} L${x(0)},${zero} Z" fill="${color}" fill-opacity=".14"/>
       <path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
       ${pts.map((p, i) => `<circle cx="${x(i)}" cy="${y(p.value)}" r="3.5" fill="${color}"/>`).join('')}
       ${labels ? pts.map((p, i) => `<text x="${x(i)}" y="${h - 6}" fill="var(--mu)" font-size="11" text-anchor="middle">${esc(String(p.label).slice(0, 8))}</text>`).join('') : ''}
@@ -551,11 +607,11 @@ function chartSVG(type, pts, color, w, h, labels = true) {
   }
   const bw = Math.min(stepW * 0.62, 46);
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-    <line x1="${pad}" y1="${8 + innerH}" x2="${w}" y2="${8 + innerH}" stroke="var(--bd)"/>
+    <line x1="${pad}" y1="${zero}" x2="${w}" y2="${zero}" stroke="var(--bd)"/>
     ${pts.map((p, i) => {
-      const bh = Math.max(2, (Math.abs(p.value) / max) * innerH), bx = pad + stepW * i + (stepW - bw) / 2;
-      return `<rect x="${bx}" y="${8 + innerH - bh}" width="${bw}" height="${bh}" rx="6" fill="${p.color || color}" opacity=".9"/>
-        ${labels ? `<text x="${bx + bw / 2}" y="${8 + innerH - bh - 5}" fill="var(--mu)" font-size="10.5" text-anchor="middle">${niceN(p.value)}</text><text x="${bx + bw / 2}" y="${h - 6}" fill="var(--mu)" font-size="11" text-anchor="middle">${esc(String(p.label).slice(0, 8))}</text>` : ''}`;
+      const neg = p.value < 0, bh = Math.max(2, Math.abs(yOf(p.value) - zero)), bx = pad + stepW * i + (stepW - bw) / 2;
+      return `<rect x="${bx}" y="${neg ? zero : zero - bh}" width="${bw}" height="${bh}" rx="6" fill="${p.color || color}" opacity=".9"/>
+        ${labels ? `<text x="${bx + bw / 2}" y="${neg ? zero + bh + 12 : zero - bh - 5}" fill="${neg ? 'var(--dg)' : 'var(--mu)'}" font-size="10.5" text-anchor="middle">${niceN(p.value)}</text><text x="${bx + bw / 2}" y="${h - 6}" fill="var(--mu)" font-size="11" text-anchor="middle">${esc(String(p.label).slice(0, 8))}</text>` : ''}`;
     }).join('')}
   </svg>`;
 }
@@ -608,7 +664,14 @@ function renderPanel() {
       ${com && p.client ? `<div style="color:var(--mu);font-size:15px;margin-top:4px">${esc(p.client)}</div>` : ''}
       <div style="color:var(--fa);font-size:12.5px;margin-top:6px">${T('p.created', { d: fdate(p.createdAt) })}${p.updatedAt !== p.createdAt ? T('p.updated', { d: fdate(p.updatedAt) }) : ''}</div>
     </div>`;
-  if (chart) {
+  if (isBudgetKind(tab.kind) && p.price != null) {
+    const sp = p.spent || 0, left = p.price - sp, ratio = p.price > 0 ? Math.min(1, sp / p.price) : 0;
+    const bc = left < 0 ? 'var(--dg)' : ratio > 0.8 ? 'var(--wa)' : C;
+    o += `<div class="box" style="display:block;border-color:${C}55;margin-top:18px">
+      <div style="font-size:24px;font-weight:800;color:${bc}">${left < 0 ? T('p.over', { v: money(-left) }) : T('budget.left', { v: money(left) })}</div>
+      <div class="track" style="margin-top:12px"><div class="fill" style="width:${ratio * 100}%;background:${bc};box-shadow:0 0 10px ${bc}"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;color:var(--mu);font-size:13px"><span>${T('budget.spent', { v: money(sp) })}</span><span>${T('budget.total', { v: money(p.price) })}</span></div></div>`;
+  } else if (chart) {
     const series = buildSeries(p, C);
     o += `<div class="box" style="display:block;border-color:${C}55;margin-top:18px;padding:12px">
       <div class="chartbox">${chartSVG(p.chartType, series, C, 380, p.chartType === 'donut' ? 230 : 200)}</div></div>
@@ -632,8 +695,8 @@ function renderPanel() {
 /* ---------- Editor ---------- */
 function openEditor(tabId, page, defaults) {
   const tab = tabs().find((t) => t.id === tabId);
-  const base = { title: '', description: '', images: [], done: false, tags: [], checklist: [], deadline: null, client: '', price: '', paid: false, day: todayIdx(), start: 540, end: 600, color: null, chartType: 'bar', source: 'manual', sourceTabId: null, metric: 'money.status', points: [] };
-  const d = page ? { ...base, ...JSON.parse(JSON.stringify(page)), price: page.price != null ? String(page.price) : '' } : { ...base, ...(defaults || {}) };
+  const base = { title: '', description: '', images: [], done: false, tags: [], checklist: [], deadline: null, client: '', price: '', paid: false, day: todayIdx(), start: 540, end: 600, color: null, chartType: 'bar', source: 'manual', sourceTabId: null, metric: 'money.status', points: [], range: '6m', spent: '' };
+  const d = page ? { ...base, ...JSON.parse(JSON.stringify(page)), price: page.price != null ? String(page.price) : '', spent: page.spent != null ? String(page.spent) : '' } : { ...base, ...(defaults || {}) };
   S.editor = { tabId, id: page ? page.id : null, d, original: page ? [...page.images] : [], err: '', _tag: '', _item: '', first: true };
   renderEditor();
   setTimeout(() => $('#m-editor .big')?.focus(), 30);
@@ -641,7 +704,7 @@ function openEditor(tabId, page, defaults) {
 function renderEditor() {
   const E = S.editor, el = $('#m-editor');
   if (!E) { el.innerHTML = ''; return; }
-  const tab = tabs().find((t) => t.id === E.tabId), d = E.d, tt = tab.kind === 'timetable', com = isMoneyKind(tab.kind), pay = tab.kind === 'payments', spend = tab.kind === 'expenses', chart = tab.kind === 'chart';
+  const tab = tabs().find((t) => t.id === E.tabId), d = E.d, tt = tab.kind === 'timetable', com = isMoneyKind(tab.kind), pay = tab.kind === 'payments', spend = tab.kind === 'expenses', budget = isBudgetKind(tab.kind), chart = tab.kind === 'chart';
   const C = tt ? d.color || tab.color : tab.color;
   const st = el.querySelector('.mbody')?.scrollTop || 0;
   const head = E.id ? (tt ? T('p.editSlot') : T('p.edit')) : tt ? T('p.newSlot') : T('p.newIn', { tab: tab.name });
@@ -656,6 +719,9 @@ function renderEditor() {
       <div class="two"><div><div class="label">${T('p.start')}</div><input class="inp" type="time" data-f="start" value="${fmt(d.start)}"></div><div><div class="label">${T('p.end')}</div><input class="inp" type="time" data-f="end" value="${fmt(d.end)}"></div></div>
       <div class="label">${T('p.color')}</div><div class="sw">${ACC.map((c) => { const a = (d.color || tab.color) === c; return `<button class="swb" data-a="e-color" data-v="${c}" style="${a ? `border-color:${c}` : ''}"><i style="background:${c};${a ? `box-shadow:0 0 12px ${c}` : ''}"></i></button>`; }).join('')}</div>`;
   }
+  if (budget) o += `<div class="two">
+      <div><div class="label" style="margin-top:12px">${T('p.budget')} (€)</div><input class="inp" data-f="price" inputmode="decimal" value="${esc(d.price)}" placeholder="0"></div>
+      <div><div class="label" style="margin-top:12px">${T('p.spentSoFar')} (€)</div><input class="inp" data-f="spent" inputmode="decimal" value="${esc(d.spent ?? '')}" placeholder="0"></div></div>`;
   if (com) o += `<div class="two"><div><div class="label" style="margin-top:12px">${T(spend ? 'p.payee' : pay ? 'p.creditor' : 'p.client')}</div><input class="inp" data-f="client" value="${esc(d.client)}" placeholder="${T(spend ? 'p.payeePh' : pay ? 'p.creditorPh' : 'p.clientPh')}"></div>
       <div><div class="label" style="margin-top:12px">${T(pay || spend ? 'p.amount' : 'p.price')} (€)</div><input class="inp" data-f="price" inputmode="decimal" value="${esc(d.price)}" placeholder="0"></div></div>
       <button class="box" data-a="e-paid" style="justify-content:space-between;${d.paid ? `border-color:${C}88` : ''}"><span>${T(spend ? 'p.markSpent' : pay ? 'p.markRepaid' : 'p.markPaid')}</span>${checkBtn(d.paid, C, 'e-paid', 'ep', 24)}</button>`;
@@ -663,6 +729,7 @@ function renderEditor() {
     const seg = (val, key, label, icon) => `<button data-a="e-ctype" data-v="${val}" style="${d.chartType === val ? `background:${C}26;border-color:${C}88;color:${C}` : ''}">${ic(icon, 15)}${label}</button>`;
     o += `<div class="label">${T('chart.type')}</div>
       <div class="seg">${seg('bar', 'bar', T('chart.bar'), 'barchart')}${seg('line', 'line', T('chart.line'), 'arrow')}${seg('donut', 'donut', T('chart.donut'), 'clock')}</div>
+      ${isRanged(d.metric) && d.source !== 'manual' ? `<div class="label">${T('chart.range')}</div><div class="seg">${RANGES.map((r) => segBtn(T('range.' + r), (d.range || '6m') === r, C, 'e-crange', r)).join('')}</div>` : ''}
       <div class="label">${T('chart.source')}</div>
       <div class="seg">${segBtn(T('chart.manual'), !d.source || d.source === 'manual', C, 'e-csource', 'manual')}${segBtn(T('chart.tab'), d.source === 'tab', C, 'e-csource', 'tab')}${segBtn(T('chart.all'), d.source === 'all', C, 'e-csource', 'all')}</div>`;
     if (d.source === 'all') {
@@ -672,7 +739,7 @@ function renderEditor() {
     } else if (d.source === 'tab') {
       o += `<div class="label">${T('chart.pickTab')}</div>${tabs().filter((x) => x.kind !== 'chart').map((x) => `
         <button class="kind" data-a="e-ctab" data-v="${x.id}" style="${d.sourceTabId === x.id ? `border-color:${x.color}99;background:${x.color}14` : ''}"><i class="dot" style="background:${x.color}"></i><span style="flex:1;text-align:left">${esc(x.name)}</span>${d.sourceTabId === x.id ? ic('check', 16) : ''}</button>`).join('')}
-        <div class="label">${T('chart.metric')}</div>${METRICS.map((m) => `
+        <div class="label">${T('chart.metric')}</div>${((tabs().find((x) => x.id === d.sourceTabId) || {}).kind === 'budget' ? BUDGET_METRICS : METRICS).map((m) => `
         <button class="kind" data-a="e-cmetric" data-v="${m}" style="${d.metric === m ? `border-color:${C}99;background:${C}14` : ''}"><span style="flex:1;text-align:left">${T('metric.' + m)}</span>${d.metric === m ? ic('check', 16) : ''}</button>`).join('')}`;
     } else {
       o += `<div class="label">${T('chart.value')}</div>${(d.points || []).map((pt) => `
@@ -727,7 +794,7 @@ function saveEditor() {
   const pr = parseFloat(String(d.price).replace(',', '.'));
   const removed = E.original.filter((r) => !d.images.includes(r));
   if (removed.length) api.deleteImages(removed);
-  const out = { title: d.title.trim(), description: d.description.trim(), images: d.images, done: d.done, tags: d.tags, checklist: d.checklist, deadline: d.deadline, client: String(d.client || '').trim(), price: isNaN(pr) ? null : pr, paid: d.paid, day: d.day, start: d.start, end: d.end, color: d.color, chartType: d.chartType, source: d.source, sourceTabId: d.sourceTabId, metric: d.metric, points: (d.points || []).map((x) => ({ id: x.id, label: String(x.label || '').trim(), value: parseFloat(String(x.value).replace(',', '.')) || 0 })), updatedAt: Date.now() };
+  const out = { title: d.title.trim(), description: d.description.trim(), images: d.images, done: d.done, tags: d.tags, checklist: d.checklist, deadline: d.deadline, client: String(d.client || '').trim(), price: isNaN(pr) ? null : pr, paid: d.paid, day: d.day, start: d.start, end: d.end, color: d.color, chartType: d.chartType, source: d.source, sourceTabId: d.sourceTabId, metric: d.metric, range: d.range || '6m', spent: parseFloat(String(d.spent).replace(',', '.')) || 0, points: (d.points || []).map((x) => ({ id: x.id, label: String(x.label || '').trim(), value: parseFloat(String(x.value).replace(',', '.')) || 0 })), updatedAt: Date.now() };
   const list = S.data.pages[E.tabId];
   if (E.id) Object.assign(list.find((p) => p.id === E.id), out);
   else { const id = uid(); list.unshift({ ...PAGE_DEFAULTS, id, createdAt: Date.now(), ...out }); S.data.orderUpdatedAt = now(); }
@@ -761,7 +828,7 @@ function renderTabEd() {
     <div class="mhead"><h2>${X.id ? T('tabs.edit') : T('tabs.new')}</h2><button class="iconbtn" data-a="t-close">${ic('x', 18)}</button></div>
     <div class="mbody">
       <input class="inp" data-tf="name" value="${esc(d.name)}" placeholder="${T('tabs.name')}" maxlength="32">${X.err ? `<div class="err">${X.err}</div>` : ''}
-      ${!X.id ? `<div class="label">${T('tabs.type')}</div>${['board', 'timetable', 'commissions', 'payments', 'expenses', 'chart'].map((k) => { const a = d.kind === k; return `<button class="kind" data-a="t-kind" data-v="${k}" style="${a ? `border-color:${C}99;background:${C}14` : ''}"><span style="color:${a ? C : 'var(--mu)'}">${ic(KIND_IC[k], 20)}</span><span style="flex:1;text-align:left"><b style="display:block;${a ? '' : 'color:var(--mu)'}">${T('kind.' + k)}</b><span style="color:var(--fa);font-size:12px">${T('kd.' + k)}</span></span></button>`; }).join('')}` : ''}
+      ${!X.id ? `<div class="label">${T('tabs.type')}</div>${['board', 'timetable', 'commissions', 'payments', 'expenses', 'budget', 'chart'].map((k) => { const a = d.kind === k; return `<button class="kind" data-a="t-kind" data-v="${k}" style="${a ? `border-color:${C}99;background:${C}14` : ''}"><span style="color:${a ? C : 'var(--mu)'}">${ic(KIND_IC[k], 20)}</span><span style="flex:1;text-align:left"><b style="display:block;${a ? '' : 'color:var(--mu)'}">${T('kind.' + k)}</b><span style="color:var(--fa);font-size:12px">${T('kd.' + k)}</span></span></button>`; }).join('')}` : ''}
       ${d.kind === 'timetable' ? `<div class="label">${T('tabs.hours')}</div><div style="display:flex;align-items:center;gap:12px">${stepper(d.startHour, 't-hs')}<span style="color:var(--fa)">${ic('arrow', 16)}</span>${stepper(d.endHour, 't-he')}</div>` : ''}
       <div class="label">${T('tabs.color')}</div><div class="sw">${ACC.map((c) => `<button class="swb" data-a="t-color" data-v="${c}" style="${c === C ? `border-color:${c}` : ''}"><i style="background:${c};${c === C ? `box-shadow:0 0 12px ${c}` : ''}"></i></button>`).join('')}</div>
     </div>
@@ -1062,6 +1129,7 @@ const A = {
   'e-csource': (d) => { S.editor.d.source = d.v; renderEditor(); },
   'e-ctab': (d) => { S.editor.d.sourceTabId = d.v; renderEditor(); },
   'e-cmetric': (d) => { S.editor.d.metric = d.v; renderEditor(); },
+  'e-crange': (d) => { S.editor.d.range = d.v; renderEditor(); },
   'e-tpl': (d) => {
     const tpl = (S.data.templates || []).find((x) => x.id === d.id);
     if (!tpl) return;
