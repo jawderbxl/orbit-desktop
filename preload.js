@@ -1,0 +1,27 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('orbit', {
+  load: () => ipcRenderer.invoke('load'),
+  save: (data) => ipcRenderer.invoke('save', data),
+  saveSync: (data) => ipcRenderer.sendSync('save-sync', data),
+  pickImages: () => ipcRenderer.invoke('pick-images'),
+  saveImageBuffer: (buffer, ext) => ipcRenderer.invoke('save-image-buffer', { buffer, ext }),
+  deleteImages: (refs) => ipcRenderer.invoke('delete-images', refs),
+  exportBackup: (data) => ipcRenderer.invoke('export-backup', data),
+  importBackup: () => ipcRenderer.invoke('import-backup'),
+  listSnapshots: () => ipcRenderer.invoke('list-snapshots'),
+  readSnapshot: (name) => ipcRenderer.invoke('read-snapshot', name),
+  snapshotNow: (data, label) => ipcRenderer.invoke('snapshot-now', { data, label }),
+  openDataFolder: () => ipcRenderer.invoke('open-data-folder'),
+  version: () => ipcRenderer.invoke('app-version'),
+  request: (req) => ipcRenderer.invoke('request', req),
+  sessionGet: () => ipcRenderer.invoke('session-get'),
+  sessionSet: (value) => ipcRenderer.invoke('session-set', value),
+  imageExists: (name) => ipcRenderer.invoke('image-exists', name),
+  imageB64: (name) => ipcRenderer.invoke('image-b64', name),
+  imageWrite: (name, b64) => ipcRenderer.invoke('image-write', { name, b64 }),
+  updateCheck: () => ipcRenderer.invoke('update-check'),
+  updateDownload: () => ipcRenderer.invoke('update-download'),
+  updateInstall: () => ipcRenderer.invoke('update-install'),
+  onUpdateStatus: (cb) => ipcRenderer.on('update-status', (_e, p) => cb(p)),
+});
