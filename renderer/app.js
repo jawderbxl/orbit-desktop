@@ -52,6 +52,22 @@ const P = {
   refresh: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
 };
 const ic = (n, s = 18, w = 2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+const THEMES = {
+  night: { bg: '#0A0A14', s1: '#12121F', s2: '#1A1A2B', s3: '#22223A', bd: '#25253A', tx: '#EEEEF8', mu: '#8A8AA6', fa: '#4B4B66', on: '#0A0A14', scheme: 'dark' },
+  ink: { bg: '#000000', s1: '#0C0C0C', s2: '#161616', s3: '#1F1F1F', bd: '#242424', tx: '#F5F5F5', mu: '#8C8C8C', fa: '#525252', on: '#000000', scheme: 'dark' },
+  light: { bg: '#F5F5FA', s1: '#FFFFFF', s2: '#ECECF4', s3: '#E1E1EC', bd: '#DCDCE8', tx: '#14141F', mu: '#5F5F73', fa: '#9A9AAE', on: '#FFFFFF', scheme: 'light' },
+};
+const THEME_NAMES = ['night', 'ink', 'light'];
+function applyTheme(name) {
+  const th = THEMES[name] || THEMES.night;
+  const r = document.documentElement.style;
+  r.setProperty('--bg', th.bg); r.setProperty('--s1', th.s1); r.setProperty('--s2', th.s2); r.setProperty('--s3', th.s3);
+  r.setProperty('--bd', th.bd); r.setProperty('--tx', th.tx); r.setProperty('--mu', th.mu); r.setProperty('--fa', th.fa);
+  r.setProperty('--on', th.on); r.style = r.style;
+  document.documentElement.style.colorScheme = th.scheme;
+  document.body.classList.toggle('lighttheme', name === 'light');
+}
+
 const KIND_IC = { board: 'board', timetable: 'calendar', commissions: 'cash', payments: 'card', budget: 'wallet', chart: 'barchart' };
 const MONEY_KINDS = ['commissions', 'payments', 'budget'];
 const isMoneyKind = (k) => MONEY_KINDS.includes(k);
@@ -96,6 +112,7 @@ const L = {
     'kind.expenses': 'Spending', 'kd.expenses': 'What you spend: what, how much, when',
     'p.payee': 'Paid to', 'p.payeePh': 'Shop, site, person', 'p.spent': 'Spent', 'p.toSpend': 'Planned', 'p.markSpent': 'Mark as paid',
     'money.spent': '{v} spent', 'money.planned': '{v} planned',
+    'news.title': "What's new", 'news.build': 'Build {b}', 'news.see': "What's new", 'theme.title': 'Theme', 'theme.night': 'Night', 'theme.ink': 'Ink', 'theme.light': 'Light',
     'chart.all': 'All money tabs', 'flow.in': 'Money in', 'flow.out': 'Money out', 'flow.balance': 'Balance',
     'metric.flow.inout': 'Money in and out', 'metric.flow.balance': 'Money left over time', 'metric.budget.spentMonth': 'Spending per period', 'p.addSpending': 'Add a payment', 'p.amount2': 'Amount', 'metric.flow.month': 'Net per period', 'metric.flow.tab': 'Total per tab',
     'search.global': 'All tabs', 'search.none': 'Nothing found for "{q}"',
@@ -147,6 +164,7 @@ const L = {
     'kind.expenses': 'Dépenses', 'kd.expenses': 'Ce que tu dépenses : quoi, combien, quand',
     'p.payee': 'Payé à', 'p.payeePh': 'Boutique, site, personne', 'p.spent': 'Payé', 'p.toSpend': 'Prévu', 'p.markSpent': 'Marquer comme payé',
     'money.spent': '{v} dépensé', 'money.planned': '{v} prévu',
+    'news.title': 'Nouveautés', 'news.build': 'Build {b}', 'news.see': 'Nouveautés', 'theme.title': 'Thème', 'theme.night': 'Nuit', 'theme.ink': 'Encre', 'theme.light': 'Clair',
     'chart.all': 'Tous les onglets argent', 'flow.in': 'Entrées', 'flow.out': 'Sorties', 'flow.balance': 'Solde',
     'metric.flow.inout': 'Entrées et sorties', 'metric.flow.balance': 'Argent restant dans le temps', 'metric.budget.spentMonth': 'Dépenses par période', 'p.addSpending': 'Ajouter un paiement', 'p.amount2': 'Montant', 'metric.flow.month': 'Net par période', 'metric.flow.tab': 'Total par onglet',
     'search.global': 'Tous les onglets', 'search.none': 'Aucun résultat pour « {q} »',
@@ -167,6 +185,7 @@ const S = {
   data: null, filter: 'all', search: '', view: 'week', day: todayIdx(),
   detailId: null, detailAnim: false, editor: null, tabEd: null, settings: false, confirm: null, viewer: null,
   animKey: '', popId: null, lastRatio: 0, dragPage: null, dragTab: null, scrolledTT: null, version: '', snaps: [],
+  newsOpen: false,
   account: { configured: false, user: null, status: 'idle', lastSync: null, error: null }, accountOpen: false, globalSearch: false, overviewOpen: false,
   auth: { mode: 'signIn', email: '', password: '', confirm: '', error: '', info: '', busy: false },
   update: { open: false, state: 'idle', version: '', percent: 0, checking: false },
@@ -224,7 +243,7 @@ function defaultData() {
     { id: uid(), name: 'Games', color: ACC[1], kind: 'board', startHour: 7, endHour: 22 },
     { id: uid(), name: 'Commissions', color: ACC[2], kind: 'commissions', startHour: 7, endHour: 22 },
   ];
-  return { version: 2, settings: { language: 'en' }, activeTabId: tabs[0].id, tabs, pages: Object.fromEntries(tabs.map((t) => [t.id, []])), deleted: { tabs: {}, pages: {} }, orderUpdatedAt: 0, profile: { name: '', photo: null }, profileUpdatedAt: 0, templates: [] };
+  return { version: 2, settings: { language: 'en', theme: 'night', seenBuild: 0 }, activeTabId: tabs[0].id, tabs, pages: Object.fromEntries(tabs.map((t) => [t.id, []])), deleted: { tabs: {}, pages: {} }, orderUpdatedAt: 0, profile: { name: '', photo: null }, profileUpdatedAt: 0, templates: [] };
 }
 function migrate(d) {
   if (!d || !Array.isArray(d.tabs) || d.tabs.length === 0) return defaultData();
@@ -239,7 +258,7 @@ function migrate(d) {
     }
     pages[t.id] = (d.pages?.[t.id] || []).map((p) => ({ ...PAGE_DEFAULTS, ...p }));
   });
-  return { version: 2, settings: { language: 'en', ...(d.settings || {}) }, activeTabId: tabs.some((t) => t.id === d.activeTabId) ? d.activeTabId : tabs[0].id, tabs, pages, deleted: { tabs: { ...(d.deleted?.tabs || {}) }, pages: { ...(d.deleted?.pages || {}) } }, orderUpdatedAt: d.orderUpdatedAt || 0, profile: { name: '', photo: null, ...(d.profile || {}) }, profileUpdatedAt: d.profileUpdatedAt || 0, templates: Array.isArray(d.templates) ? d.templates : [] };
+  return { version: 2, settings: { language: 'en', theme: 'night', seenBuild: 0, ...(d.settings || {}) }, activeTabId: tabs.some((t) => t.id === d.activeTabId) ? d.activeTabId : tabs[0].id, tabs, pages, deleted: { tabs: { ...(d.deleted?.tabs || {}) }, pages: { ...(d.deleted?.pages || {}) } }, orderUpdatedAt: d.orderUpdatedAt || 0, profile: { name: '', photo: null, ...(d.profile || {}) }, profileUpdatedAt: d.profileUpdatedAt || 0, templates: Array.isArray(d.templates) ? d.templates : [] };
 }
 let saveTimer;
 function persist(fromSync) {
@@ -320,7 +339,7 @@ function findPage(id) { for (const k in S.data.pages) { const p = S.data.pages[k
 const allImages = () => Object.values(S.data.pages).flat().flatMap((p) => p.images || []);
 
 /* ---------- Render ---------- */
-function renderAll() { renderSide(); renderMain(); renderPanel(); renderSettings(); renderEditor(); renderTabEd(); renderAccount(); renderUpdate(); renderMove(); renderOverview(); renderConfirm(); renderViewer(); }
+function renderAll() { renderSide(); renderMain(); renderPanel(); renderSettings(); renderEditor(); renderTabEd(); renderAccount(); renderUpdate(); renderMove(); renderOverview(); renderNews(); renderConfirm(); renderViewer(); }
 
 function renderSide() {
   const act = activeTab();
@@ -455,10 +474,10 @@ function cardHTML(p, tab, i, drag) {
   return `<div class="card ${p.done ? 'done' : ''} ${S.detailId === p.id ? 'sel' : ''}" data-a="open" data-id="${p.id}" ${drag ? `draggable="true" data-drag-page="${p.id}"` : ''} style="--c:${C};animation-delay:${Math.min(i, 14) * 28}ms">
     ${p.images[0] ? `<img class="cover" src="${imgSrc(p.images[0])}" alt="" draggable="false">` : ''}
     <div class="cin">
-      <div class="trow">${checkBtn(p.done, C, 'toggle', p.id)}<span class="ctitle ${p.done ? 'strike' : ''}">${esc(p.title)}</span>${(com || bud) && p.price != null ? `<b style="font-size:15px;color:${p.paid ? 'var(--mu)' : C}">${money(p.price)}</b>` : ''}</div>
+      <div class="trow">${bud ? '' : checkBtn(p.done, C, 'toggle', p.id)}<span class="ctitle ${p.done ? 'strike' : ''}">${esc(p.title)}</span>${(com || bud) && p.price != null ? `<b style="font-size:15px;color:${p.paid ? 'var(--mu)' : C}">${money(p.price)}</b>` : ''}</div>
       ${com && p.client ? `<div class="sub">${esc(p.client)}</div>` : ''}
-      ${bud && bTotal > 0 ? `<div class="track" style="margin:10px 0 0 34px"><div class="fill" style="width:${bRatio * 100}%;background:${bColor};box-shadow:0 0 10px ${bColor}"></div></div>
-        <div style="display:flex;justify-content:space-between;margin:6px 0 0 34px;font-size:12.5px"><span style="color:var(--mu)">${T('budget.spent', { v: money(bSpent) })}</span><b style="color:${bColor}">${bLeft < 0 ? T('p.over', { v: money(-bLeft) }) : T('budget.left', { v: money(bLeft) })}</b></div>` : ''}
+      ${bud && bTotal > 0 ? `<div class="track" style="margin:10px 0 0 0"><div class="fill" style="width:${bRatio * 100}%;background:${bColor};box-shadow:0 0 10px ${bColor}"></div></div>
+        <div style="display:flex;justify-content:space-between;margin:6px 0 0 0;font-size:12.5px"><span style="color:var(--mu)">${T('budget.spent', { v: money(bSpent) })}</span><b style="color:${bColor}">${bLeft < 0 ? T('p.over', { v: money(-bLeft) }) : T('budget.left', { v: money(bLeft) })}</b></div>` : ''}
       ${p.description ? `<div class="desc">${esc(p.description)}</div>` : ''}
       ${meta ? `<div class="meta">${meta}</div>` : ''}
     </div>
@@ -466,7 +485,7 @@ function cardHTML(p, tab, i, drag) {
 }
 
 const METRICS = ['money.status', 'money.month', 'money.client', 'pages.status', 'pages.tag'];
-const FLOW_METRICS = ['flow.balance', 'flow.month', 'flow.inout', 'flow.tab'];
+const FLOW_METRICS = ['flow.balance', 'flow.month', 'flow.tab'];
 const BUDGET_METRICS = ['budget.remaining', 'budget.split', 'budget.spentMonth'];
 const entriesOf = (p) => (Array.isArray(p.entries) ? p.entries : []);
 const spentOf = (p) => (entriesOf(p).length ? entriesOf(p).reduce((n, e) => n + (+e.amount || 0), 0) : +p.spent || 0);
@@ -885,7 +904,9 @@ function renderSettings() {
   el.innerHTML = `<div class="mwrap" data-a="s-backdrop" style="${first ? '' : 'animation:none'}"><div class="modal small" style="--c:${C};border-color:var(--bd);${first ? '' : 'animation:none'}">
     <div class="mhead"><h2 style="font-size:20px">${T('s.title')}</h2><button class="iconbtn" data-a="s-close">${ic('x', 18)}</button></div>
     <div class="mbody">
-      <div class="label" style="margin-top:4px">${T('profile.title')}</div>
+      <div class="label" style="margin-top:4px">${T('theme.title')}</div>
+      <div class="seg">${THEME_NAMES.map((n) => segBtn(T('theme.' + n), (S.data.settings.theme || 'night') === n, C, 's-theme', n)).join('')}</div>
+      <div class="label">${T('profile.title')}</div>
       <div class="action" style="cursor:default;gap:16px">
         <button data-a="pf-photo" title="${T('profile.change')}">
           ${S.data.profile?.photo ? `<img class="pfimg" src="${imgSrc(S.data.profile.photo)}" alt="">` : `<span class="pfimg pfempty" style="color:${C};border-color:${C}66">${ic('camera', 22)}</span>`}
@@ -909,6 +930,7 @@ function renderSettings() {
       <div class="action" style="cursor:default;flex-wrap:wrap">
         ${logoSVG(38, C)}
         <span style="flex:1;text-align:left"><b style="display:block">Orbit</b><span style="color:var(--mu);font-size:12px">${T('update.version', { v: esc(S.version) })}</span></span>
+        <button class="btn ghost" data-a="s-news">${ic('bookmark', 15)}${T('news.see')}</button>
         <button class="btn ghost" data-a="u-check" ${S.update.checking ? 'disabled' : ''}>${S.update.checking ? `<span class="spin">${ic('refresh', 15)}</span>` : ic('refresh', 15)}${T('update.check')}</button>
       </div>
       <p class="netnote">${ic('wifi', 13)}${T('account.internet')}</p>
@@ -1061,6 +1083,32 @@ function renderOverview() {
       ${!slots.length && !deadlines.length && !hasMoney ? `<p style="color:var(--mu);text-align:center;padding:40px 0">${T('overview.empty')}</p>` : ''}
     </div>
   </div></div>`;
+}
+
+const BUILD = 9;
+const CHANGELOG = [
+  { build: 9, date: '2026-09-18',
+    fr: ["Onglet Dépenses retiré : les budgets enregistrent les dépenses, avec leur date", "Courbe de l'argent façon bourse : chaque entrée monte, chaque dépense descend", "Graphique « + / − par période », plus de solde inutile", "Plus de case « à faire » sur les budgets et les graphiques", 'Thèmes : Nuit, Encre et Clair', 'Ce journal des nouveautés'],
+    en: ['Spending tab removed: budgets record spending with a date', 'Money curve like a stock chart', '"+ / − per period" chart, no more useless balance', 'No more "to do" checkbox on budgets and charts', 'Themes: Night, Ink and Light', 'This update log'] },
+  { build: 8, date: '2026-09-18', fr: ['Budgets avec dépenses datées', 'Périodes 12 mois, 6 mois, 30 jours, 7 jours'], en: ['Budgets with dated spending', '12 months, 6 months, 30 days, 7 days ranges'] },
+  { build: 6, date: '2026-09-17', fr: ['Recherche dans tous les onglets', "Vue d'ensemble du jour", 'Dupliquer et déplacer une page', 'Modèles de page'], en: ['Search across every tab', 'Today overview', 'Duplicate and move a page', 'Page templates'] },
+  { build: 2, date: '2026-09-17', fr: ['Onglets Paiements et Graphiques', 'Profil avec nom et photo'], en: ['Payments and Charts tabs', 'Profile with name and photo'] },
+];
+
+function renderNews() {
+  const el = $('#m-news');
+  if (!S.newsOpen) { el.innerHTML = ''; return; }
+  const C = activeTab().color;
+  const since = S.newsOpen === 'new' ? (S.data.settings.seenBuild || 0) : 0;
+  const list = CHANGELOG.filter((c) => c.build > since);
+  el.innerHTML = `<div class="mwrap" style="z-index:62"><div class="modal" style="--c:${C};border-color:${C}44">
+    <div class="mhead"><h2 style="font-size:20px">${T('news.title')}</h2><button class="iconbtn" data-a="news-close">${ic('x', 18)}</button></div>
+    <div class="mbody">
+      ${(list.length ? list : CHANGELOG).map((c, i) => `<div class="newscard" style="${i === 0 ? `border-color:${C}55` : ''}">
+        <div class="newshead"><b style="color:${C}">${T('news.build', { b: c.build })}</b><span style="color:var(--fa);font-size:12.5px">${new Date(c.date).toLocaleDateString(loc(), { day: 'numeric', month: 'long' })}</span></div>
+        ${(c[lang()] || c.en).map((x) => `<div class="newsitem"><i style="background:${C}"></i><span>${esc(x)}</span></div>`).join('')}
+      </div>`).join('')}
+    </div></div></div>`;
 }
 
 function renderViewer() {
@@ -1238,6 +1286,9 @@ const A = {
   'c-ok': () => { const c = S.confirm; S.confirm = null; renderConfirm(); c.ok(); },
   's-backdrop': (d, t, e) => { if (e.target === t) { S.settings = false; renderSettings(); } },
   's-close': () => { S.settings = false; renderSettings(); },
+  's-theme': (d) => { S.data.settings.theme = d.v; applyTheme(d.v); commit(); renderSettings(); },
+  's-news': () => { S.newsOpen = true; renderNews(); },
+  'news-close': () => { S.newsOpen = false; S.data.settings.seenBuild = BUILD; persist(); renderNews(); },
   's-lang': (d) => { S.data.settings.language = d.v; document.documentElement.lang = d.v; commit(); },
   's-export': async () => { const r = await api.exportBackup(S.data); if (r?.path) toast(T('s.exported')); },
   's-import': () => askConfirm(T('s.importTitle'), T('s.importMsg'), T('s.replace'), async () => {
@@ -1494,8 +1545,11 @@ function playIntro() {
   let last = 0;
   try { last = +localStorage.getItem('orbit.lastSync'); } catch (e) {}
   S.account.lastSync = last || null;
+  applyTheme(S.data.settings.theme || 'night');
   renderAll();
   persist(true);
+  if (!S.data.settings.seenBuild) { S.data.settings.seenBuild = BUILD; persist(true); }
+  else if (S.data.settings.seenBuild < BUILD) { setTimeout(() => { S.newsOpen = 'new'; renderNews(); }, 900); }
   if (S.account.user) runSync();
   api.onUpdateStatus((p) => {
     Object.assign(S.update, p);

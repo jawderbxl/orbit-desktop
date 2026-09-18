@@ -1,7 +1,7 @@
 {
   "name": "orbit-desktop",
   "productName": "Orbit",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Orbit desktop, offline timetable and task manager",
   "main": "main.js",
   "author": "Runtime Studios",
