@@ -52,8 +52,8 @@ const P = {
   refresh: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
 };
 const ic = (n, s = 18, w = 2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
-const KIND_IC = { board: 'board', timetable: 'calendar', commissions: 'cash', payments: 'card', expenses: 'spend', budget: 'wallet', chart: 'barchart' };
-const MONEY_KINDS = ['commissions', 'payments', 'expenses'];
+const KIND_IC = { board: 'board', timetable: 'calendar', commissions: 'cash', payments: 'card', budget: 'wallet', chart: 'barchart' };
+const MONEY_KINDS = ['commissions', 'payments', 'budget'];
 const isMoneyKind = (k) => MONEY_KINDS.includes(k);
 const isBudgetKind = (k) => k === 'budget';
 const moneySign = (k) => (k === 'commissions' ? 1 : -1);
@@ -97,7 +97,7 @@ const L = {
     'p.payee': 'Paid to', 'p.payeePh': 'Shop, site, person', 'p.spent': 'Spent', 'p.toSpend': 'Planned', 'p.markSpent': 'Mark as paid',
     'money.spent': '{v} spent', 'money.planned': '{v} planned',
     'chart.all': 'All money tabs', 'flow.in': 'Money in', 'flow.out': 'Money out', 'flow.balance': 'Balance',
-    'metric.flow.inout': 'Money in and out', 'metric.flow.month': 'Balance per month', 'metric.flow.tab': 'Total per tab',
+    'metric.flow.inout': 'Money in and out', 'metric.flow.balance': 'Money left over time', 'metric.budget.spentMonth': 'Spending per period', 'p.addSpending': 'Add a payment', 'p.amount2': 'Amount', 'metric.flow.month': 'Net per period', 'metric.flow.tab': 'Total per tab',
     'search.global': 'All tabs', 'search.none': 'Nothing found for "{q}"',
     'overview.title': 'Today', 'overview.next': 'Coming up', 'overview.deadlines': 'Deadlines this week', 'overview.money': 'Money',
     'overview.empty': 'Nothing planned. Enjoy.', 'overview.in': 'in {v}', 'overview.now': 'now', 'overview.earned': 'To receive', 'overview.owed': 'To pay',
@@ -148,7 +148,7 @@ const L = {
     'p.payee': 'Payé à', 'p.payeePh': 'Boutique, site, personne', 'p.spent': 'Payé', 'p.toSpend': 'Prévu', 'p.markSpent': 'Marquer comme payé',
     'money.spent': '{v} dépensé', 'money.planned': '{v} prévu',
     'chart.all': 'Tous les onglets argent', 'flow.in': 'Entrées', 'flow.out': 'Sorties', 'flow.balance': 'Solde',
-    'metric.flow.inout': 'Entrées et sorties', 'metric.flow.month': 'Solde par mois', 'metric.flow.tab': 'Total par onglet',
+    'metric.flow.inout': 'Entrées et sorties', 'metric.flow.balance': 'Argent restant dans le temps', 'metric.budget.spentMonth': 'Dépenses par période', 'p.addSpending': 'Ajouter un paiement', 'p.amount2': 'Montant', 'metric.flow.month': 'Net par période', 'metric.flow.tab': 'Total par onglet',
     'search.global': 'Tous les onglets', 'search.none': 'Aucun résultat pour « {q} »',
     'overview.title': "Aujourd'hui", 'overview.next': 'À venir', 'overview.deadlines': 'Deadlines cette semaine', 'overview.money': 'Argent',
     'overview.empty': 'Rien de prévu. Profite.', 'overview.in': 'dans {v}', 'overview.now': 'maintenant', 'overview.earned': 'À recevoir', 'overview.owed': 'À payer',
@@ -217,7 +217,7 @@ function logoSVG(size, sat = '#22D3EE', { intro = false, period = 8 } = {}) {
 }
 
 /* ---------- Data ---------- */
-const PAGE_DEFAULTS = { description: '', done: false, images: [], tags: [], checklist: [], deadline: null, client: '', price: null, paid: false, day: 0, start: 540, end: 600, color: null, chartType: 'bar', source: 'manual', sourceTabId: null, metric: 'money.status', points: [], range: '6m', spent: 0 };
+const PAGE_DEFAULTS = { description: '', done: false, images: [], tags: [], checklist: [], deadline: null, client: '', price: null, paid: false, day: 0, start: 540, end: 600, color: null, chartType: 'bar', source: 'manual', sourceTabId: null, metric: 'money.status', points: [], range: '6m', spent: 0, entries: [] };
 function defaultData() {
   const tabs = [
     { id: uid(), name: 'Timetable', color: ACC[0], kind: 'timetable', startHour: 7, endHour: 22 },
@@ -230,7 +230,15 @@ function migrate(d) {
   if (!d || !Array.isArray(d.tabs) || d.tabs.length === 0) return defaultData();
   const tabs = d.tabs.map((t) => ({ kind: t.name === 'Timetable' ? 'timetable' : t.name === 'Commissions' ? 'commissions' : 'board', startHour: 7, endHour: 22, updatedAt: 0, ...t }));
   const pages = {};
-  tabs.forEach((t) => { pages[t.id] = (d.pages?.[t.id] || []).map((p) => ({ ...PAGE_DEFAULTS, ...p })); });
+  tabs.forEach((t) => {
+    if (t.kind === 'expenses') {
+      t.kind = 'budget';
+      pages[t.id] = (d.pages?.[t.id] || []).map((p) => ({ ...PAGE_DEFAULTS, ...p,
+        entries: Array.isArray(p.entries) && p.entries.length ? p.entries : (p.paid && p.price ? [{ id: uid(), amount: p.price, date: p.deadline ?? p.createdAt ?? Date.now(), label: '' }] : []) }));
+      return;
+    }
+    pages[t.id] = (d.pages?.[t.id] || []).map((p) => ({ ...PAGE_DEFAULTS, ...p }));
+  });
   return { version: 2, settings: { language: 'en', ...(d.settings || {}) }, activeTabId: tabs.some((t) => t.id === d.activeTabId) ? d.activeTabId : tabs[0].id, tabs, pages, deleted: { tabs: { ...(d.deleted?.tabs || {}) }, pages: { ...(d.deleted?.pages || {}) } }, orderUpdatedAt: d.orderUpdatedAt || 0, profile: { name: '', photo: null, ...(d.profile || {}) }, profileUpdatedAt: d.profileUpdatedAt || 0, templates: Array.isArray(d.templates) ? d.templates : [] };
 }
 let saveTimer;
@@ -433,10 +441,10 @@ function renderBody() {
 
 function cardHTML(p, tab, i, drag) {
   const bud = isBudgetKind(tab.kind);
-  const bTotal = p.price || 0, bSpent = p.spent || 0, bLeft = bTotal - bSpent;
+  const bTotal = p.price || 0, bSpent = spentOf(p), bLeft = bTotal - bSpent;
   const bRatio = bTotal > 0 ? Math.min(1, bSpent / bTotal) : 0;
   const bColor = bLeft < 0 ? 'var(--dg)' : bRatio > 0.8 ? 'var(--wa)' : tab.color;
-  const C = tab.color, com = isMoneyKind(tab.kind), pay = tab.kind === 'payments', spend = tab.kind === 'expenses', d = due(p), cd = p.checklist.filter((c) => c.done).length;
+  const C = tab.color, com = isMoneyKind(tab.kind) && !isBudgetKind(tab.kind), pay = tab.kind === 'payments', spend = false, d = due(p), cd = p.checklist.filter((c) => c.done).length;
   let meta = '';
   if (com && p.price != null) meta += chip(p.paid ? T(spend ? 'p.spent' : pay ? 'p.repaid' : 'p.paid') : T(spend ? 'p.toSpend' : pay ? 'p.toPay' : 'p.unpaid'), p.paid ? '#8A8AA6' : '#FBBF24', p.paid ? 'check' : 'clock');
   if (d) meta += chip(d.l, d.c, 'flag');
@@ -458,71 +466,93 @@ function cardHTML(p, tab, i, drag) {
 }
 
 const METRICS = ['money.status', 'money.month', 'money.client', 'pages.status', 'pages.tag'];
-const FLOW_METRICS = ['flow.inout', 'flow.month', 'flow.tab'];
-const BUDGET_METRICS = ['budget.remaining', 'budget.split'];
+const FLOW_METRICS = ['flow.balance', 'flow.month', 'flow.inout', 'flow.tab'];
+const BUDGET_METRICS = ['budget.remaining', 'budget.split', 'budget.spentMonth'];
+const entriesOf = (p) => (Array.isArray(p.entries) ? p.entries : []);
+const spentOf = (p) => (entriesOf(p).length ? entriesOf(p).reduce((n, e) => n + (+e.amount || 0), 0) : +p.spent || 0);
+const leftOf = (p) => (p.price || 0) - spentOf(p);
+function movements() {
+  const out = [];
+  tabs().forEach((tab) => {
+    const list = S.data.pages[tab.id] || [];
+    if (tab.kind === 'commissions' || tab.kind === 'payments') {
+      const sign = moneySign(tab.kind);
+      list.forEach((p) => { if (p.price != null && p.paid) out.push({ at: p.deadline ?? p.updatedAt ?? p.createdAt ?? 0, amount: sign * p.price, tab }); });
+    } else if (tab.kind === 'budget') {
+      list.forEach((p) => {
+        const es = entriesOf(p);
+        if (es.length) es.forEach((e) => out.push({ at: e.date ?? p.updatedAt ?? 0, amount: -(+e.amount || 0), tab }));
+        else if (p.spent) out.push({ at: p.updatedAt ?? p.createdAt ?? 0, amount: -p.spent, tab });
+      });
+    }
+  });
+  return out.sort((a, b) => a.at - b.at);
+}
 const RANGES = ['12m', '6m', '30d', '7d'];
-const isRanged = (m) => m === 'money.month' || m === 'flow.month';
+const isRanged = (m) => ['money.month', 'flow.month', 'flow.balance', 'budget.spentMonth'].includes(m);
 function buckets(range) {
   const out = [], n = new Date();
   if (range === '30d' || range === '7d') {
     const days = range === '7d' ? 7 : 30;
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(n.getFullYear(), n.getMonth(), n.getDate() - i);
-      out.push({ key: `d${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`, label: d.toLocaleDateString(loc(), days === 7 ? { weekday: 'short' } : { day: 'numeric' }) });
+      out.push({ key: `d${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`, label: d.toLocaleDateString(loc(), days === 7 ? { weekday: 'short' } : { day: 'numeric' }), end: new Date(d).setHours(23, 59, 59, 999) });
     }
     return out;
   }
   const months = range === '12m' ? 12 : 6;
   for (let i = months - 1; i >= 0; i--) {
     const d = new Date(n.getFullYear(), n.getMonth() - i, 1);
-    out.push({ key: `m${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString(loc(), { month: 'short' }) });
+    out.push({ key: `m${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString(loc(), { month: 'short' }), end: new Date(n.getFullYear(), n.getMonth() - i + 1, 0, 23, 59, 59).getTime() });
   }
   return out;
 }
 const bucketKey = (ts, range) => { const d = new Date(ts); return range === '30d' || range === '7d' ? `d${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` : `m${d.getFullYear()}-${d.getMonth()}`; };
 function budgetTotals(list) {
   const budget = list.reduce((n, p) => n + (p.price || 0), 0);
-  const spent = list.reduce((n, p) => n + (p.spent || 0), 0);
+  const spent = list.reduce((n, p) => n + spentOf(p), 0);
   return { budget, spent, left: budget - spent };
 }
 const shade = (i) => ACC[i % ACC.length];
 const topN = (map, n = 6) => Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, n);
 function moneyTotals() {
   let income = 0, spent = 0, toReceive = 0, toPay = 0;
-  tabs().filter((t) => isMoneyKind(t.kind)).forEach((t) => {
-    const sign = moneySign(t.kind);
-    (S.data.pages[t.id] || []).forEach((p) => {
-      if (p.price == null) return;
-      if (p.paid) sign > 0 ? (income += p.price) : (spent += p.price);
-      else sign > 0 ? (toReceive += p.price) : (toPay += p.price);
-    });
+  tabs().forEach((t) => {
+    const list = S.data.pages[t.id] || [];
+    if (t.kind === 'commissions') list.forEach((p) => { if (p.price != null) p.paid ? (income += p.price) : (toReceive += p.price); });
+    else if (t.kind === 'payments') list.forEach((p) => { if (p.price != null) p.paid ? (spent += p.price) : (toPay += p.price); });
+    else if (t.kind === 'budget') list.forEach((p) => { spent += spentOf(p); });
   });
   return { income, spent, toReceive, toPay, balance: income - spent };
 }
 function buildSeries(page, accent) {
   if (page.source === 'all') {
-    const rows = tabs().filter((t) => isMoneyKind(t.kind))
-      .flatMap((t) => (S.data.pages[t.id] || []).filter((p) => p.price != null).map((p) => ({ ...p, tab: t, sign: moneySign(t.kind) })));
-    const mkey = (p) => { const d = new Date(p.deadline ?? p.createdAt ?? 0); return `${d.getFullYear()}-${d.getMonth()}`; };
+    const mv = movements();
+    const range = page.range || '6m';
     if (page.metric === 'flow.month') {
-      const range = page.range || '6m';
       return buckets(range).map(({ key, label }) => {
-        const sum = rows.reduce((acc, r) => (bucketKey(r.deadline ?? r.createdAt ?? 0, range) === key ? acc + r.sign * r.price : acc), 0);
+        const sum = mv.reduce((acc, m) => (bucketKey(m.at, range) === key ? acc + m.amount : acc), 0);
         return { label, value: sum, color: sum < 0 ? '#FF4D6D' : accent };
       });
     }
     if (page.metric === 'flow.tab') {
       const map = {};
-      rows.forEach((r) => { map[r.tab.name] = (map[r.tab.name] || 0) + r.sign * r.price; });
+      mv.forEach((m) => { map[m.tab.name] = (map[m.tab.name] || 0) + m.amount; });
       return topN(map).map(([label, value], i) => ({ label, value, color: value < 0 ? '#FF4D6D' : shade(i) }));
     }
-    const income = rows.filter((r) => r.sign > 0).reduce((n, r) => n + r.price, 0);
-    const spent = rows.filter((r) => r.sign < 0).reduce((n, r) => n + r.price, 0);
-    return [
-      { label: T('flow.in'), value: income, color: accent },
-      { label: T('flow.out'), value: spent, color: '#FF4D6D' },
-      { label: T('flow.balance'), value: income - spent, color: income - spent < 0 ? '#FBBF24' : '#34D399' },
-    ];
+    if (page.metric === 'flow.inout') {
+      const income = mv.filter((m) => m.amount > 0).reduce((n, m) => n + m.amount, 0);
+      const out = -mv.filter((m) => m.amount < 0).reduce((n, m) => n + m.amount, 0);
+      return [
+        { label: T('flow.in'), value: income, color: '#34D399' },
+        { label: T('flow.out'), value: out, color: '#FF4D6D' },
+        { label: T('flow.balance'), value: income - out, color: income - out < 0 ? '#FBBF24' : accent },
+      ];
+    }
+    return buckets(range).map(({ label, end }) => {
+      const total = mv.reduce((n, m) => (m.at <= end ? n + m.amount : n), 0);
+      return { label, value: total, color: total < 0 ? '#FF4D6D' : accent };
+    });
   }
   if (page.source !== 'tab') return (page.points || []).map((p, i) => ({ label: p.label || '—', value: +p.value || 0, color: p.color || shade(i) }));
   const tab = tabs().find((x) => x.id === page.sourceTabId);
@@ -544,12 +574,19 @@ function buildSeries(page, accent) {
       const range = page.range || '6m';
       const sign = moneySign(tab.kind);
       return buckets(range).map(({ key, label }) => {
-        const sum = list.reduce((acc, p) => (p.price != null && bucketKey(p.deadline ?? p.createdAt ?? 0, range) === key ? acc + sign * p.price : acc), 0);
+        const sum = list.reduce((acc, p) => (p.price != null && p.paid && bucketKey(p.deadline ?? p.createdAt ?? 0, range) === key ? acc + sign * p.price : acc), 0);
         return { label, value: sum, color: sum < 0 ? '#FF4D6D' : accent };
       });
     }
     case 'budget.remaining':
-      return list.slice(0, 8).map((p, i) => ({ label: p.title, value: Math.max(0, (p.price || 0) - (p.spent || 0)), color: shade(i) }));
+      return list.slice(0, 8).map((p, i) => ({ label: p.title, value: leftOf(p), color: leftOf(p) < 0 ? '#FF4D6D' : shade(i) }));
+    case 'budget.spentMonth': {
+      const range = page.range || '6m';
+      return buckets(range).map(({ key, label }) => {
+        const sum = list.reduce((n, p) => n + entriesOf(p).reduce((m, e) => (bucketKey(e.date ?? 0, range) === key ? m + (+e.amount || 0) : m), 0), 0);
+        return { label, value: sum, color: sum ? '#FF4D6D' : accent };
+      });
+    }
     case 'budget.split': {
       const b = budgetTotals(list);
       return [{ label: T('p.spentSoFar'), value: b.spent, color: '#FF4D6D' }, { label: T('p.remaining'), value: Math.max(0, b.left), color: accent }];
@@ -647,7 +684,7 @@ function renderPanel() {
   const el = $('#panel');
   const f = S.detailId && findPage(S.detailId);
   if (!f) { el.classList.remove('open'); S.detailId = null; return; }
-  const { p, tabId } = f, tab = tabs().find((t) => t.id === tabId), tt = tab.kind === 'timetable', com = isMoneyKind(tab.kind), pay = tab.kind === 'payments', spend = tab.kind === 'expenses', chart = tab.kind === 'chart';
+  const { p, tabId } = f, tab = tabs().find((t) => t.id === tabId), tt = tab.kind === 'timetable', com = isMoneyKind(tab.kind), pay = tab.kind === 'payments', spend = false, chart = tab.kind === 'chart';
   const C = tt ? p.color || tab.color : tab.color, d = due(p), cd = p.checklist.filter((c) => c.done).length;
   const st = el.querySelector('.pscroll')?.scrollTop || 0;
   let o = `<div class="pin" style="--c:${C}">
@@ -665,12 +702,15 @@ function renderPanel() {
       <div style="color:var(--fa);font-size:12.5px;margin-top:6px">${T('p.created', { d: fdate(p.createdAt) })}${p.updatedAt !== p.createdAt ? T('p.updated', { d: fdate(p.updatedAt) }) : ''}</div>
     </div>`;
   if (isBudgetKind(tab.kind) && p.price != null) {
-    const sp = p.spent || 0, left = p.price - sp, ratio = p.price > 0 ? Math.min(1, sp / p.price) : 0;
+    const sp = spentOf(p), left = leftOf(p), ratio = p.price > 0 ? Math.min(1, sp / p.price) : 0;
     const bc = left < 0 ? 'var(--dg)' : ratio > 0.8 ? 'var(--wa)' : C;
     o += `<div class="box" style="display:block;border-color:${C}55;margin-top:18px">
       <div style="font-size:24px;font-weight:800;color:${bc}">${left < 0 ? T('p.over', { v: money(-left) }) : T('budget.left', { v: money(left) })}</div>
       <div class="track" style="margin-top:12px"><div class="fill" style="width:${ratio * 100}%;background:${bc};box-shadow:0 0 10px ${bc}"></div></div>
-      <div style="display:flex;justify-content:space-between;margin-top:8px;color:var(--mu);font-size:13px"><span>${T('budget.spent', { v: money(sp) })}</span><span>${T('budget.total', { v: money(p.price) })}</span></div></div>`;
+      <div style="display:flex;justify-content:space-between;margin-top:8px;color:var(--mu);font-size:13px"><span>${T('budget.spent', { v: money(sp) })}</span><span>${T('budget.total', { v: money(p.price) })}</span></div>
+      <div style="display:flex;gap:8px;margin-top:14px"><input class="inp" id="spendAmount" inputmode="decimal" placeholder="${T('p.amount2')}" style="flex:1;--c:${C}"><button class="btn fillc" data-a="d-spend" style="--c:${C}">${ic('plus', 16)}${T('p.addSpending')}</button></div>
+      ${entriesOf(p).slice().reverse().slice(0, 10).map((e) => `<div class="entryrow"><span style="flex:1;color:var(--mu);font-size:13px">${fdate(e.date)}</span><b style="color:var(--dg);font-size:13.5px">-${money(e.amount)}</b><button data-a="d-unspend" data-id="${e.id}" style="color:var(--fa)">${ic('x', 15)}</button></div>`).join('')}
+      </div>`;
   } else if (chart) {
     const series = buildSeries(p, C);
     o += `<div class="box" style="display:block;border-color:${C}55;margin-top:18px;padding:12px">
@@ -704,7 +744,7 @@ function openEditor(tabId, page, defaults) {
 function renderEditor() {
   const E = S.editor, el = $('#m-editor');
   if (!E) { el.innerHTML = ''; return; }
-  const tab = tabs().find((t) => t.id === E.tabId), d = E.d, tt = tab.kind === 'timetable', com = isMoneyKind(tab.kind), pay = tab.kind === 'payments', spend = tab.kind === 'expenses', budget = isBudgetKind(tab.kind), chart = tab.kind === 'chart';
+  const tab = tabs().find((t) => t.id === E.tabId), d = E.d, tt = tab.kind === 'timetable', com = isMoneyKind(tab.kind), pay = tab.kind === 'payments', spend = false, budget = isBudgetKind(tab.kind), chart = tab.kind === 'chart';
   const C = tt ? d.color || tab.color : tab.color;
   const st = el.querySelector('.mbody')?.scrollTop || 0;
   const head = E.id ? (tt ? T('p.editSlot') : T('p.edit')) : tt ? T('p.newSlot') : T('p.newIn', { tab: tab.name });
@@ -828,7 +868,7 @@ function renderTabEd() {
     <div class="mhead"><h2>${X.id ? T('tabs.edit') : T('tabs.new')}</h2><button class="iconbtn" data-a="t-close">${ic('x', 18)}</button></div>
     <div class="mbody">
       <input class="inp" data-tf="name" value="${esc(d.name)}" placeholder="${T('tabs.name')}" maxlength="32">${X.err ? `<div class="err">${X.err}</div>` : ''}
-      ${!X.id ? `<div class="label">${T('tabs.type')}</div>${['board', 'timetable', 'commissions', 'payments', 'expenses', 'budget', 'chart'].map((k) => { const a = d.kind === k; return `<button class="kind" data-a="t-kind" data-v="${k}" style="${a ? `border-color:${C}99;background:${C}14` : ''}"><span style="color:${a ? C : 'var(--mu)'}">${ic(KIND_IC[k], 20)}</span><span style="flex:1;text-align:left"><b style="display:block;${a ? '' : 'color:var(--mu)'}">${T('kind.' + k)}</b><span style="color:var(--fa);font-size:12px">${T('kd.' + k)}</span></span></button>`; }).join('')}` : ''}
+      ${!X.id ? `<div class="label">${T('tabs.type')}</div>${['board', 'timetable', 'commissions', 'payments', 'budget', 'chart'].map((k) => { const a = d.kind === k; return `<button class="kind" data-a="t-kind" data-v="${k}" style="${a ? `border-color:${C}99;background:${C}14` : ''}"><span style="color:${a ? C : 'var(--mu)'}">${ic(KIND_IC[k], 20)}</span><span style="flex:1;text-align:left"><b style="display:block;${a ? '' : 'color:var(--mu)'}">${T('kind.' + k)}</b><span style="color:var(--fa);font-size:12px">${T('kd.' + k)}</span></span></button>`; }).join('')}` : ''}
       ${d.kind === 'timetable' ? `<div class="label">${T('tabs.hours')}</div><div style="display:flex;align-items:center;gap:12px">${stepper(d.startHour, 't-hs')}<span style="color:var(--fa)">${ic('arrow', 16)}</span>${stepper(d.endHour, 't-he')}</div>` : ''}
       <div class="label">${T('tabs.color')}</div><div class="sw">${ACC.map((c) => `<button class="swb" data-a="t-color" data-v="${c}" style="${c === C ? `border-color:${c}` : ''}"><i style="background:${c};${c === C ? `box-shadow:0 0 12px ${c}` : ''}"></i></button>`).join('')}</div>
     </div>
@@ -1061,6 +1101,22 @@ const A = {
   'd-paid': () => { const f = findPage(S.detailId); f.p.paid = !f.p.paid; f.p.updatedAt = now(); S.popId = 'p' + f.p.id; commit(); },
   'd-item': (d) => { const f = findPage(S.detailId); const c = f.p.checklist.find((x) => x.id === d.id); c.done = !c.done; f.p.updatedAt = now(); S.popId = d.id; commit(); },
   'd-edit': () => { const f = findPage(S.detailId); openEditor(f.tabId, f.p); },
+  'd-spend': () => {
+    const el = document.getElementById('spendAmount');
+    const value = parseFloat(String(el && el.value).replace(',', '.'));
+    if (!isFinite(value) || value <= 0) return;
+    const f = findPage(S.detailId);
+    const base = entriesOf(f.p).length ? entriesOf(f.p) : (f.p.spent ? [{ id: uid(), amount: f.p.spent, date: f.p.createdAt ?? now(), label: '' }] : []);
+    f.p.entries = [...base, { id: uid(), amount: value, date: now(), label: '' }];
+    f.p.updatedAt = now();
+    commit();
+  },
+  'd-unspend': (d) => {
+    const f = findPage(S.detailId);
+    f.p.entries = entriesOf(f.p).filter((e) => e.id !== d.id);
+    f.p.updatedAt = now();
+    commit();
+  },
   'd-duplicate': () => {
     const f = findPage(S.detailId);
     const copy = { ...f.p, id: uid(), title: T('p.copy', { title: f.p.title }), images: [], createdAt: now(), updatedAt: now() };

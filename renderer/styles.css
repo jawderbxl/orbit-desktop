@@ -232,3 +232,5 @@ textarea.inp{min-height:120px;line-height:1.55;resize:vertical}
 .gshead{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin:6px 0 10px}
 .search button{display:grid;place-items:center;padding:4px;border-radius:8px}
 .search button:hover{background:var(--s2)}
+
+.entryrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--bd)}
