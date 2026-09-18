@@ -54,7 +54,7 @@
       {
         "provider": "github",
         "owner": "jawderbxl",
-        "repo": "orbit-releases",
+        "repo": "orbit-desktop",
         "releaseType": "release"
       }
     ]
