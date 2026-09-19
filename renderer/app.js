@@ -434,7 +434,7 @@ function renderBody() {
       ? `<div class="cards charts">${shown.map((p, i) => `
         <div class="card chartcard" data-a="open" data-id="${p.id}" style="--c:${tab.color};animation-delay:${Math.min(i, 12) * 28}ms">
           <div class="cin"><div class="trow"><span class="ctitle">${esc(p.title)}</span><span style="color:var(--fa)">${ic(KIND_IC.chart, 15)}</span></div>
-          <div class="chartbox">${chartSVG(p.chartType, buildSeries(p, tab.color), tab.color, 360, p.chartType === 'donut' ? 200 : 180)}</div>
+          <div class="chartbox">${chartSVG(p.chartType, buildSeries(p, tab.color), tab.color, 360, p.chartType === 'donut' ? 200 : 180, true, !freeScale(p))}</div>
           ${p.description ? `<div class="desc" style="margin-left:0">${esc(p.description)}</div>` : ''}</div>
         </div>`).join('')}</div>`
       : `<div class="empty"><div class="eicon" style="border-color:${tab.color}55;color:${tab.color};box-shadow:0 0 26px ${tab.color}44">${ic('barchart', 32, 1.8)}</div>${T('e.all')}</div>`;
@@ -544,6 +544,7 @@ function moneyTotals() {
   });
   return { income, spent, toReceive, toPay, balance: income - spent };
 }
+const freeScale = (page) => page.source === 'all' && page.metric === 'flow.balance';
 function buildSeries(page, accent) {
   if (page.source === 'all') {
     const mv = movements();
@@ -628,11 +629,14 @@ function buildSeries(page, accent) {
   }
 }
 const niceN = (v) => (Math.abs(v) >= 1000 ? `${Math.round(v / 100) / 10}k` : Math.round(v * 10) / 10);
-function chartSVG(type, pts, color, w, h, labels = true) {
+function chartSVG(type, pts, color, w, h, labels = true, zeroBase = true) {
   pts = (pts || []).filter((p) => p && isFinite(p.value));
   if (!pts.length) return `<div style="color:var(--mu);font-size:13px;padding:20px 0;text-align:center">${T('chart.noData')}</div>`;
   const pad = labels ? 26 : 8, innerH = h - (labels ? 22 : 6) - 8;
-  const hi = Math.max(...pts.map((p) => p.value), 0), lo = Math.min(...pts.map((p) => p.value), 0);
+  const vals = pts.map((p) => p.value);
+  let hi = zeroBase ? Math.max(...vals, 0) : Math.max(...vals);
+  let lo = zeroBase ? Math.min(...vals, 0) : Math.min(...vals);
+  if (!zeroBase) { const pad = (hi - lo) * 0.15 || Math.max(1, Math.abs(hi) * 0.15); hi += pad; lo -= pad; }
   const span = hi - lo || 1;
   const yOf = (v) => 8 + ((hi - v) / span) * innerH;
   const zero = yOf(0);
@@ -733,7 +737,7 @@ function renderPanel() {
   } else if (chart) {
     const series = buildSeries(p, C);
     o += `<div class="box" style="display:block;border-color:${C}55;margin-top:18px;padding:12px">
-      <div class="chartbox">${chartSVG(p.chartType, series, C, 380, p.chartType === 'donut' ? 230 : 200)}</div></div>
+      <div class="chartbox">${chartSVG(p.chartType, series, C, 380, p.chartType === 'donut' ? 230 : 200, true, !freeScale(p))}</div></div>
       <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">${series.map((x) => `<div style="display:flex;align-items:center;gap:10px"><i class="bigdot" style="background:${x.color || C}"></i><span style="flex:1;color:var(--mu);font-size:13.5px">${esc(x.label)}</span><b style="font-size:13.5px">${Math.round(x.value * 100) / 100}</b></div>`).join('')}</div>`;
   } else if (tt) o += `<div class="box" style="display:block;border-color:${C}66;box-shadow:0 0 24px ${C}33;margin-top:18px"><div style="color:${C};font-weight:700;font-size:13px">${T('days.long')[p.day]}</div><div style="font-size:30px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums">${fmt(p.start)} – ${fmt(p.end)}</div></div>`;
   else if (!chart) o += `<div>
@@ -1085,8 +1089,11 @@ function renderOverview() {
   </div></div>`;
 }
 
-const BUILD = 9;
+const BUILD = 10;
 const CHANGELOG = [
+  { build: 10, date: '2026-09-19',
+    fr: ["Courbe de l'argent choisie automatiquement pour « Tous les onglets argent »", "L'échelle suit tes montants : plat quand rien ne bouge, monte ou descend à chaque mouvement"],
+    en: ['Money curve picked automatically for "All money tabs"', 'Scale follows your amounts: flat when nothing moves, up or down on every movement'] },
   { build: 9, date: '2026-09-18',
     fr: ["Onglet Dépenses retiré : les budgets enregistrent les dépenses, avec leur date", "Courbe de l'argent façon bourse : chaque entrée monte, chaque dépense descend", "Graphique « + / − par période », plus de solde inutile", "Plus de case « à faire » sur les budgets et les graphiques", 'Thèmes : Nuit, Encre et Clair', 'Ce journal des nouveautés'],
     en: ['Spending tab removed: budgets record spending with a date', 'Money curve like a stock chart', '"+ / − per period" chart, no more useless balance', 'No more "to do" checkbox on budgets and charts', 'Themes: Night, Ink and Light', 'This update log'] },
@@ -1230,7 +1237,13 @@ const A = {
   'e-item': (d) => { const c = S.editor.d.checklist.find((x) => x.id === d.id); c.done = !c.done; S.popId = d.id; renderEditor(); },
   'e-item-rm': (d) => { S.editor.d.checklist = S.editor.d.checklist.filter((x) => x.id !== d.id); renderEditor(); },
   'e-ctype': (d) => { S.editor.d.chartType = d.v; renderEditor(); },
-  'e-csource': (d) => { S.editor.d.source = d.v; renderEditor(); },
+  'e-csource': (d) => {
+    const E = S.editor;
+    E.d.source = d.v;
+    if (d.v === 'all' && !FLOW_METRICS.includes(E.d.metric)) E.d.metric = 'flow.balance';
+    if (d.v === 'tab' && !METRICS.concat(BUDGET_METRICS).includes(E.d.metric)) E.d.metric = 'money.status';
+    renderEditor();
+  },
   'e-ctab': (d) => { S.editor.d.sourceTabId = d.v; renderEditor(); },
   'e-cmetric': (d) => { S.editor.d.metric = d.v; renderEditor(); },
   'e-crange': (d) => { S.editor.d.range = d.v; renderEditor(); },
